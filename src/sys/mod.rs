@@ -5,6 +5,20 @@ use std::{
     io::{self, Read},
 };
 
+pub mod disks;
+pub mod uptime;
+pub mod format_num;
+pub mod hostname;
+pub mod os_release;
+pub mod process;
+
+pub use self::format_num::MemUnit;
+pub use self::hostname::hostname;
+pub use self::os_release::OsRelease;
+pub use self::uptime::uptime;
+pub use self::process::process_by_user;
+pub use self::disks::get_all_disks;
+
 // https://github.com/FillZpp/sys-info-rs
 /// System memory information.
 #[derive(Debug)]

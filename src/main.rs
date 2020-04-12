@@ -1,27 +1,27 @@
+pub mod sys;
+pub mod services;
+
+use sys::{
+    cpu_info,
+    get_kernel,
+    get_all_disks,
+    hostname,
+    loadavg,
+    mem_info,
+    MemUnit,
+    OsRelease,
+    process_by_user,
+    uptime
+};
+
+use services::{
+    list_unit_files,
+    get_docker_processes,
+    systemd
+};
+
 use ansi_term::Colour::{Blue, Cyan, Green, Purple, Red, Yellow};
 use terminal_size::{terminal_size, Height, Width};
-
-pub mod disks;
-pub mod docker;
-pub mod format_num;
-pub mod hostname;
-pub mod os_release;
-pub mod process;
-pub mod sys;
-pub mod systemd;
-pub mod uptime;
-
-use docker::get_docker_processes;
-use format_num::MemType::*;
-use hostname::hostname;
-use os_release::OsRelease;
-use sys::{cpu_info, get_kernel, loadavg, mem_info};
-use systemd::list_unit_files;
-use uptime::uptime;
-
-use process::process_by_user;
-
-use disks::get_all_disks;
 
 fn main() {
     let size = terminal_size();
@@ -76,7 +76,7 @@ fn main() {
             " - {}....: {} used, {} free, {} total",
             Cyan.bold().paint("Memory"),
             Green.bold().paint(
-                MiB(
+                MemUnit::MiB(
                     (mem.total - mem.free - mem.cached - mem.buffers - mem.sreclaimable) as f64
                         * 1024 as f64
                 )
@@ -84,42 +84,69 @@ fn main() {
             ),
             Green
                 .bold()
-                .paint(MiB(mem.free as f64 * 1024 as f64).to_string()),
+                .paint(MemUnit::MiB(mem.free as f64 * 1024 as f64).to_string()),
             Green
                 .bold()
-                .paint(MiB(mem.total as f64 * 1024 as f64).to_string())
+                .paint(MemUnit::MiB(mem.total as f64 * 1024 as f64).to_string())
         );
 
         println!(" - {}", Cyan.bold().paint("Volumes"));
         for disk in disks {
+            if disk.total_space >= 1_000_000_000 {
+                println!(
+                    "     {}{}{}",
+                    disk.mount_point.to_str().unwrap(),
+                    " ".repeat(
+                        w as usize
+                            - (disk.mount_point.to_str().unwrap().len()
+                                + 13
+                                + ((((disk.total_space - disk.available_space) as f64
+                                    / disk.total_space as f64)
+                                    * 100.0)
+                                    .ceil()
+                                    .to_string()
+                                    + "% out of "
+                                    + &format!("{}", MemUnit::GB(disk.total_space as f64)))
+                                    .len())
+                    ),
+                    (((disk.total_space - disk.available_space) as f64 / disk.total_space as f64)
+                        * 100.0)
+                        .ceil()
+                        .to_string()
+                        + "% out of "
+                        + &format!("{}", MemUnit::GB(disk.total_space as f64))
+                );
+            } else {
+                println!(
+                    "     {}{}{}",
+                    disk.mount_point.to_str().unwrap(),
+                    " ".repeat(
+                        w as usize
+                            - (disk.mount_point.to_str().unwrap().len()
+                                + 13
+                                + ((((disk.total_space - disk.available_space) as f64
+                                    / disk.total_space as f64)
+                                    * 100.0)
+                                    .ceil()
+                                    .to_string()
+                                    + "% out of "
+                                    + &format!("{}", MemUnit::MB(disk.total_space as f64)))
+                                    .len())
+                    ),
+                    (((disk.total_space - disk.available_space) as f64 / disk.total_space as f64)
+                        * 100.0)
+                        .ceil()
+                        .to_string()
+                        + "% out of "
+                        + &format!("{}", MemUnit::MB(disk.total_space as f64))
+                );
+            }
+            
             println!(
-                "     {}{}{}",
-                disk.mount_point.to_str().unwrap(),
-                " ".repeat(
-                    w as usize
-                        - (disk.mount_point.to_str().unwrap().len()
-                            + 13
-                            + ((((disk.total_space - disk.available_space) as f64
-                                / disk.total_space as f64)
-                                * 100.0)
-                                .ceil()
-                                .to_string()
-                                + "% out of "
-                                + &format!("{}", GB(disk.total_space as f64)))
-                                .len())
-                ),
-                (((disk.total_space - disk.available_space) as f64 / disk.total_space as f64)
-                    * 100.0)
-                    .ceil()
-                    .to_string()
-                    + "% out of "
-                    + &format!("{}", GB(disk.total_space as f64))
-            );
-            println!(
-                "        [{}{}]",
+                "     [{}{}]",
                 Blue.bold().paint(
                     "=".repeat(
-                        ((w as f64 - 18.0)
+                        ((w as f64 - 15.0)
                             * ((disk.total_space - disk.available_space) as f64
                                 / disk.total_space as f64))
                             .ceil() as usize
@@ -127,7 +154,7 @@ fn main() {
                 ),
                 Purple.paint(
                     "=".repeat(
-                        ((w as f64 - 18.0)
+                        ((w as f64 - 15.0)
                             * (1.0
                                 - ((disk.total_space - disk.available_space) as f64
                                     / disk.total_space as f64)))
@@ -141,22 +168,29 @@ fn main() {
             if !sd_unit.name.is_empty() {
                 match sd_unit.state {
                     systemd::UnitState::Enabled | systemd::UnitState::EnabledRuntime => {
-                        println!("     {} {}", Green.paint(""), Green.paint(sd_unit.name))
+                        println!("     {} {}", Green.bold().paint(""), Green.bold().paint(sd_unit.name))
                     }
                     systemd::UnitState::Masked
                     | systemd::UnitState::MaskedRuntime
                     | systemd::UnitState::Disabled
                     | systemd::UnitState::Bad => {
-                        println!("     {} {}", Red.paint(""), Red.paint(sd_unit.name))
+                        println!("     {} {}", Red.bold().paint(""), Red.bold().paint(sd_unit.name))
                     }
-                    _ => println!("     {} {}", Yellow.paint("卑"), Yellow.paint(sd_unit.name)),
+                    _ => println!("     {} {}", Yellow.bold().paint("卑"), Yellow.bold().paint(sd_unit.name)),
                 }
             }
         }
-        println!("\n - {}", Cyan.bold().paint("Docker Containers"));
-        for process in get_docker_processes() {
-            println!("     {}", process);
+        
+        match get_docker_processes() {
+            Some(processes) => {
+                println!("\n - {}", Cyan.bold().paint("Docker Containers"));
+                for process in processes {
+                    println!("     {}", process);
+                }
+            },
+            None => {}
         }
+        
     } else {
         println!("Unable to get terminal size");
     }

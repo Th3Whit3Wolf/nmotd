@@ -1,6 +1,6 @@
 use std::fmt;
 
-pub enum MemType {
+pub enum MemUnit {
     B(f64),
     KB(f64),
     KiB(f64),
@@ -10,27 +10,27 @@ pub enum MemType {
     GiB(f64),
 }
 
-impl MemType {
+impl MemUnit {
     fn as_str(&self) -> &'static str {
         match self {
-            MemType::B(_) => "B",
-            MemType::KB(_) => "KB",
-            MemType::KiB(_) => "KiB",
-            MemType::MB(_) => "MB",
-            MemType::MiB(_) => "MiB",
-            MemType::GB(_) => "GB",
-            MemType::GiB(_) => "GiB",
+            MemUnit::B(_) => "B",
+            MemUnit::KB(_) => "KB",
+            MemUnit::KiB(_) => "KiB",
+            MemUnit::MB(_) => "MB",
+            MemUnit::MiB(_) => "MiB",
+            MemUnit::GB(_) => "GB",
+            MemUnit::GiB(_) => "GiB",
         }
     }
     fn format(&self) -> String {
         let bytes: f64 = match &self {
-            MemType::B(bytes) => *bytes,
-            MemType::KB(bytes) => bytes / 1000 as f64,
-            MemType::KiB(bytes) => bytes / 1024 as f64,
-            MemType::MB(bytes) => bytes / 1_000_000 as f64,
-            MemType::MiB(bytes) => bytes / 1_048_576 as f64,
-            MemType::GB(bytes) => bytes / 1_000_000_000 as f64,
-            MemType::GiB(bytes) => bytes / 1_073_741_824 as f64,
+            MemUnit::B(bytes) => *bytes,
+            MemUnit::KB(bytes) => bytes / 1000 as f64,
+            MemUnit::KiB(bytes) => bytes / 1024 as f64,
+            MemUnit::MB(bytes) => bytes / 1_000_000 as f64,
+            MemUnit::MiB(bytes) => bytes / 1_048_576 as f64,
+            MemUnit::GB(bytes) => bytes / 1_000_000_000 as f64,
+            MemUnit::GiB(bytes) => bytes / 1_073_741_824 as f64,
         };
         let string = bytes.to_string();
         match bytes as u64 {
@@ -80,7 +80,7 @@ impl MemType {
     }
 }
 
-impl fmt::Display for MemType {
+impl fmt::Display for MemUnit {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}{}", self.format(), self.as_str())
     }
