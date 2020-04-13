@@ -8,6 +8,10 @@ pub enum MemUnit {
     MiB(f64),
     GB(f64),
     GiB(f64),
+    TB(f64),
+    TiB(f64),
+    PB(f64),
+    PiB(f64)
 }
 
 impl MemUnit {
@@ -20,6 +24,10 @@ impl MemUnit {
             MemUnit::MiB(_) => "MiB",
             MemUnit::GB(_) => "GB",
             MemUnit::GiB(_) => "GiB",
+            MemUnit::TB(_) => "TB",
+            MemUnit::TiB(_) => "TiB",
+            MemUnit::PB(_) => "PB",
+            MemUnit::PiB(_) => "PiB"
         }
     }
     fn format(&self) -> String {
@@ -31,6 +39,10 @@ impl MemUnit {
             MemUnit::MiB(bytes) => bytes / 1_048_576_f64,
             MemUnit::GB(bytes) => bytes / 1_000_000_000_f64,
             MemUnit::GiB(bytes) => bytes / 1_073_741_824_f64,
+            MemUnit::TB(bytes) => bytes / 1_000_000_000_000_f64,
+            MemUnit::TiB(bytes) => bytes / 1_099_511_627_776_f64,
+            MemUnit::PB(bytes) => bytes / 1_000_000_000_000_000_f64,
+            MemUnit::PiB(bytes) => bytes / 1_125_899_906_842_624_f64
         };
         let string = bytes.to_string();
         match bytes as u64 {
