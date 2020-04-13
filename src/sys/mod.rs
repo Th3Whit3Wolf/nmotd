@@ -6,21 +6,21 @@ use std::{
 };
 
 pub mod disks;
-pub mod uptime;
 pub mod format_num;
 pub mod hostname;
 pub mod os_release;
 pub mod process;
+pub mod uptime;
 
+pub use self::disks::get_all_disks;
 pub use self::format_num::MemUnit;
 pub use self::hostname::hostname;
-pub use self::os_release::OsRelease;
-pub use self::uptime::uptime;
-pub use self::process::process_by_user;
-pub use self::disks::get_all_disks;
+pub use self::os_release::{distro, OsRelease};
+pub use self::process::{process_by_user, username};
+pub use self::uptime::{format_duration, get_uptime, uptime};
 
 // https://github.com/FillZpp/sys-info-rs
-/// System memory information.
+// System memory information.
 #[derive(Debug)]
 pub struct MemInfo {
     /// Total physical memory.
@@ -227,5 +227,231 @@ impl From<std::time::SystemTimeError> for Error {
 impl From<Box<dyn std::error::Error>> for Error {
     fn from(e: Box<dyn std::error::Error>) -> Error {
         Error::General(e)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::{collections::BTreeMap, env, iter::FromIterator, process::Command, time::Duration};
+
+    const EXAMPLE_OSRELEASE: &str = r#"NAME="Pop!_OS"
+    VERSION="18.04 LTS"
+    ID=ubuntu
+    ID_LIKE=debian
+    PRETTY_NAME="Pop!_OS 18.04 LTS"
+    VERSION_ID="18.04"
+    HOME_URL="https://system76.com/pop"
+    SUPPORT_URL="http://support.system76.com"
+    BUG_REPORT_URL="https://github.com/pop-os/pop/issues"
+    PRIVACY_POLICY_URL="https://system76.com/privacy"
+    VERSION_CODENAME=bionic
+    EXTRA_KEY=thing
+    ANOTHER_KEY="#;
+    #[test]
+    pub fn test_loadavg() {
+        let load = loadavg().unwrap();
+        println!("loadavg(): {:?}", load);
+    }
+    #[test]
+    pub fn test_mem_info() {
+        let mem = mem_info().unwrap();
+        assert!(mem.total > 0);
+        println!("Mem: {:?}", mem);
+    }
+    #[test]
+    pub fn test_cpu_info() {
+        let cpu = cpu_info().unwrap();
+        assert!(cpu.speed > 0);
+        assert!(cpu.physical_cores > 0);
+        assert!(cpu.logical_cores > 0);
+        println!("Cpu: {:?}", cpu);
+    }
+
+    #[test]
+    pub fn test_get_kernel() {
+        let kernel = get_kernel().unwrap();
+        assert!(kernel.len() > 0);
+        println!("Kernel: {:?}", kernel);
+    }
+
+    #[test]
+    fn gethostname_matches_system_hostname() {
+        match Command::new("hostname").output() {
+            Ok(x) => {
+                let hostname = String::from_utf8_lossy(&x.stdout);
+                // Convert both sides to lowercase; hostnames are case-insensitive
+                // anyway.
+                assert_eq!(
+                    super::hostname().into_string().unwrap().to_lowercase(),
+                    hostname.trim_end().to_lowercase()
+                );
+            }
+            Err(_) => match Command::new("hostnamectl").output() {
+                Ok(x) => {
+                    let hostname = String::from_utf8_lossy(&x.stdout);
+                    let hostname = hostname
+                        .split('\n')
+                        .find(|line| line.trim().starts_with("Static hostname"))
+                        .and_then(|line| line.split(':').last())
+                        .unwrap()
+                        .trim();
+                    assert_eq!(
+                        super::hostname().into_string().unwrap().to_lowercase(),
+                        hostname.trim_end().to_lowercase()
+                    );
+                }
+                Err(e) => eprint!("Error: {}", e),
+            },
+        }
+    }
+
+    #[test]
+    fn test_os_release() {
+        let os_release = OsRelease::from_iter(EXAMPLE_OSRELEASE.lines().map(|x| x.into()));
+
+        assert_eq!(
+            os_release,
+            OsRelease {
+                name: "Pop!_OS".into(),
+                version: "18.04 LTS".into(),
+                id: "ubuntu".into(),
+                id_like: "debian".into(),
+                pretty_name: "Pop!_OS 18.04 LTS".into(),
+                version_id: "18.04".into(),
+                home_url: "https://system76.com/pop".into(),
+                support_url: "http://support.system76.com".into(),
+                bug_report_url: "https://github.com/pop-os/pop/issues".into(),
+                privacy_policy_url: "https://system76.com/privacy".into(),
+                version_codename: "bionic".into(),
+                extra: {
+                    let mut map = BTreeMap::new();
+                    map.insert("EXTRA_KEY".to_owned(), "thing".to_owned());
+                    map
+                }
+            }
+        )
+    }
+
+    #[test]
+    fn test_distro() {
+        let distro = distro();
+        assert_ne!(distro, "Unknown".to_string());
+    }
+    #[test]
+    fn test_uptime_get() {
+        assert_eq!(get_uptime().is_ok(), true);
+    }
+
+    #[test]
+    fn test_format_duration() {
+        assert_eq!(
+            format_duration(Duration::new(864000000, 0)).len() == 65,
+            true
+        );
+        assert_eq!(
+            format_duration(Duration::new(864000000, 0))
+                == String::from(
+                    "27 years, 4 months, 16 days, 11 hours, 45 minutes, and 36 seconds"
+                ),
+            true
+        );
+        println!("{}", format_duration(Duration::new(864000000, 0)));
+        println!(
+            "len = {}",
+            format_duration(Duration::new(864000000, 0)).len()
+        );
+    }
+
+    #[test]
+    fn test_uptime() {
+        let d = get_uptime();
+        println!("{:#?}", d);
+        println!("len = {}", format_duration(d.unwrap()));
+    }
+
+    #[test]
+    fn test_bytes() {
+        assert_eq!(MemUnit::B(100.0).to_string(), String::from("100B"));
+    }
+    #[test]
+    fn test_kilobytes() {
+        assert_eq!(
+            MemUnit::KB(1_000_000.0).to_string(),
+            String::from("1,000KB")
+        );
+    }
+    #[test]
+    fn test_kibibytes() {
+        assert_eq!(
+            MemUnit::KiB(1_048_576.0).to_string(),
+            String::from("1,024KiB")
+        );
+    }
+    #[test]
+    fn test_megabytes() {
+        assert_eq!(
+            MemUnit::MB(10_000_000_000.0).to_string(),
+            String::from("10,000MB")
+        );
+    }
+    #[test]
+    fn test_mebibytes() {
+        assert_eq!(
+            MemUnit::MiB(12_073_741_824.0).to_string(),
+            String::from("11,514MiB")
+        );
+    }
+
+    #[test]
+    fn test_gigabytes() {
+        assert_eq!(
+            MemUnit::GB(100_000_000_000_000.0).to_string(),
+            String::from("100,000GB")
+        );
+    }
+    #[test]
+    fn test_gibibytes() {
+        assert_eq!(
+            MemUnit::GiB(2_440_99_511_627_776.0).to_string(),
+            String::from("227,335GiB")
+        );
+    }
+
+    #[test]
+    fn test_processes() {
+        let process_by_user = process_by_user();
+        let mut root: usize = 0;
+        let mut user: usize = 0;
+        let mut count: usize = 0;
+        match Command::new("ps").arg("-eo").arg("user").output() {
+            Ok(x) => {
+                for line in String::from_utf8(x.stdout).unwrap().lines().skip(1) {
+                    if line.trim() == "root" {
+                        root += 1
+                    } else if line.trim() == env::var("USER").unwrap() {
+                        user += 1
+                    }
+                    count += 1
+                }
+            }
+            Err(e) => eprintln!("Error: {}", e),
+        }
+
+        // We subtract one from all and user because
+        // we are creating one process calling `ps -eo user`
+        assert_eq!(process_by_user.all, count - 1);
+        assert_eq!(process_by_user.root, root);
+        assert_eq!(process_by_user.user, user - 1);
+    }
+    #[test]
+    fn test_username() {
+        assert_eq!(username(), env::var("USER").unwrap())
+    }
+
+    #[test]
+    fn test_get_all_disks() {
+        let disk = get_all_disks();
+        assert!(disk.len() > 0)
     }
 }
