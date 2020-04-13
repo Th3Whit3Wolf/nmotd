@@ -13,6 +13,8 @@ libc = "0.2.68"
 ansi_term = "0.12"
 procfs = "0.7.8"
 dbus   =  "0.8.2"
+rand = "0.7"
+textwrap = "0.11"
 
 [profile.release]
 debug = false
