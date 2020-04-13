@@ -32,9 +32,9 @@ pub fn get_docker_processes() -> Option<Vec<String>> {
                         " ",
                     ))
                 }
-            } 
-                Some(docker)
-        },
-        Err(_) => None
+            }
+            Some(docker)
+        }
+        Err(_) => None,
     }
 }
