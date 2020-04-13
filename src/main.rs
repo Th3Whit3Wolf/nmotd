@@ -1,3 +1,4 @@
+pub mod quotes;
 pub mod sys;
 pub mod services;
 
@@ -20,8 +21,11 @@ use services::{
     systemd
 };
 
+use quotes::get_quote;
+
 use ansi_term::Colour::{Blue, Cyan, Green, Purple, Red, Yellow};
 use terminal_size::{terminal_size, Height, Width};
+use textwrap::fill;
 
 fn main() {
     let size = terminal_size();
@@ -30,6 +34,7 @@ fn main() {
     let disks = get_all_disks();
     let load = loadavg().unwrap();
     let pbu = process_by_user();
+    let quote = get_quote();
     if let Some((Width(w), Height(_h))) = size {
         //println!("Your terminal is {} cols wide and lines tall", w);
         println!(
@@ -164,7 +169,7 @@ fn main() {
             )
         }
         println!("\n - {}", Cyan.bold().paint("Systemd Services"));
-        for sd_unit in list_unit_files(vec!["jellyfin", "sshd", "ufw"]).unwrap() {
+        for sd_unit in list_unit_files(vec!["fail2ban", "plexmediaserver", "samba", "smartd", "smbd", "sshd", "ufw"]).unwrap() {
             if !sd_unit.name.is_empty() {
                 match sd_unit.state {
                     systemd::UnitState::Enabled | systemd::UnitState::EnabledRuntime => {
@@ -191,7 +196,13 @@ fn main() {
             None => {}
         }
         
+
+
+        println!("\n{}", fill(quote.quote, w as usize));
+        // Print Author
+        println!("\n\t- {}", quote.author);
     } else {
         println!("Unable to get terminal size");
     }
 }
+
