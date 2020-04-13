@@ -1,10 +1,14 @@
 use libc::statvfs;
-use std::ffi::{OsStr, OsString};
-use std::fs::File;
-use std::io::{self, Read, Seek};
-use std::mem;
-use std::os::unix::ffi::OsStrExt;
-use std::path::{Path, PathBuf};
+use std::{
+    ffi::{OsStr, OsString},
+    fs::File,
+    io::{self, Read, Seek},
+    mem,
+    os::unix::ffi::OsStrExt,
+    path::{Path, PathBuf},
+};
+
+// This source code was adopted from https://github.com/GuillaumeGomez/sysinfo
 
 fn find_type_for_name(name: &OsStr) -> DiskType {
     /* turn "sda1" into "sda": */
