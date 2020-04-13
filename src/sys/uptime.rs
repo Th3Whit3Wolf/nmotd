@@ -2,7 +2,7 @@ extern crate libc;
 use std::{fmt::Write, mem, time::Duration};
 
 pub fn uptime() -> String {
-    match get() {
+    match get_uptime() {
         Ok(uptime) => {
             let uptime = format_duration(uptime);
             uptime
@@ -14,7 +14,7 @@ pub fn uptime() -> String {
     }
 }
 
-fn get() -> Result<Duration, String> {
+pub fn get_uptime() -> Result<Duration, String> {
     let mut info: libc::sysinfo = unsafe { mem::zeroed() };
     let ret = unsafe { libc::sysinfo(&mut info) };
     if ret == 0 {
@@ -24,7 +24,7 @@ fn get() -> Result<Duration, String> {
     }
 }
 
-fn format_duration(duration: Duration) -> String {
+pub fn format_duration(duration: Duration) -> String {
     let sec = duration.as_secs();
 
     let years = sec / 31557600; // 365.25d
@@ -135,33 +135,3 @@ fn parse_for_shorthand_time(uptime: String) -> String {
     str::replace(&newtime, "second", "s")
 }
 */
-
-#[test]
-fn test_uptime_get() {
-    assert_eq!(get().is_ok(), true);
-}
-
-#[test]
-fn test_format_duration() {
-    assert_eq!(
-        format_duration(Duration::new(864000000, 0)).len() == 65,
-        true
-    );
-    assert_eq!(
-        format_duration(Duration::new(864000000, 0))
-            == String::from("27 years, 4 months, 16 days, 11 hours, 45 minutes, and 36 seconds"),
-        true
-    );
-    println!("{}", format_duration(Duration::new(864000000, 0)));
-    println!(
-        "len = {}",
-        format_duration(Duration::new(864000000, 0)).len()
-    );
-}
-
-#[test]
-fn test_uptime() {
-    let d = get();
-    println!("{:#?}", d);
-    println!("len = {}", format_duration(d.unwrap()));
-}
