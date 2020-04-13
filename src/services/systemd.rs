@@ -43,10 +43,8 @@ impl UnitState {
     }
 }
 
-pub fn list_unit_files(
-    systemd_delimiter: Vec<&str>,
-) -> Result<Vec<SystemdUnit>, Box<dyn std::error::Error>> {
-    let mut systemd = Vec::with_capacity(systemd_delimiter.len());
+pub fn list_unit_files() -> Result<Vec<SystemdUnit>, Box<dyn std::error::Error>> {
+    let mut systemd = Vec::with_capacity(5);
     // First open up a connection to the session bus.
     let conn = Connection::new_system()?;
 
@@ -66,8 +64,8 @@ pub fn list_unit_files(
 
     // Let's print all the names to stdout.
     for (a, b) in names {
-        if systemd_delimiter.contains(
-            &str::replace(
+        systemd.push(SystemdUnit {
+            name: String::from(str::replace(
                 Path::new(&a)
                     .file_name()
                     .unwrap()
@@ -78,25 +76,9 @@ pub fn list_unit_files(
                     .unwrap_or(""),
                 '@',
                 "",
-            )
-            .as_str(),
-        ) {
-            systemd.push(SystemdUnit {
-                name: String::from(str::replace(
-                    Path::new(&a)
-                        .file_name()
-                        .unwrap()
-                        .to_str()
-                        .unwrap()
-                        .split('.')
-                        .next()
-                        .unwrap_or(""),
-                    '@',
-                    "",
-                )),
-                state: UnitState::new(&b),
-            })
-        }
+            )),
+            state: UnitState::new(&b),
+        })
     }
     Ok(systemd)
 }
