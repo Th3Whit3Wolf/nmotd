@@ -1,25 +1,13 @@
 pub mod quotes;
-pub mod sys;
 pub mod services;
+pub mod sys;
 
 use sys::{
-    cpu_info,
-    get_kernel,
-    get_all_disks,
-    hostname,
-    loadavg,
-    mem_info,
-    MemUnit,
-    OsRelease,
-    process_by_user,
-    uptime
+    cpu_info, get_all_disks, get_kernel, hostname, loadavg, mem_info, process_by_user, uptime,
+    MemUnit, OsRelease,
 };
 
-use services::{
-    list_unit_files,
-    get_docker_processes,
-    systemd
-};
+use services::{get_docker_processes, list_unit_files, systemd};
 
 use quotes::get_quote;
 
@@ -83,16 +71,16 @@ fn main() {
             Green.bold().paint(
                 MemUnit::MiB(
                     (mem.total - mem.free - mem.cached - mem.buffers - mem.sreclaimable) as f64
-                        * 1024 as f64
+                        * 1024_f64
                 )
                 .to_string()
             ),
             Green
                 .bold()
-                .paint(MemUnit::MiB(mem.free as f64 * 1024 as f64).to_string()),
+                .paint(MemUnit::MiB(mem.free as f64 * 1024_f64).to_string()),
             Green
                 .bold()
-                .paint(MemUnit::MiB(mem.total as f64 * 1024 as f64).to_string())
+                .paint(MemUnit::MiB(mem.total as f64 * 1024_f64).to_string())
         );
 
         println!(" - {}", Cyan.bold().paint("Volumes"));
@@ -146,7 +134,7 @@ fn main() {
                         + &format!("{}", MemUnit::MB(disk.total_space as f64))
                 );
             }
-            
+
             println!(
                 "     [{}{}]",
                 Blue.bold().paint(
@@ -169,34 +157,54 @@ fn main() {
             )
         }
         println!("\n - {}", Cyan.bold().paint("Systemd Services"));
-        for sd_unit in list_unit_files(vec!["fail2ban", "plexmediaserver", "samba", "smartd", "smbd", "sshd", "ufw"]).unwrap() {
+        for sd_unit in list_unit_files().unwrap() {
             if !sd_unit.name.is_empty() {
-                match sd_unit.state {
-                    systemd::UnitState::Enabled | systemd::UnitState::EnabledRuntime => {
-                        println!("     {} {}", Green.bold().paint(""), Green.bold().paint(sd_unit.name))
+                if vec![
+                    "fail2ban",
+                    "plexmediaserver",
+                    "samba",
+                    "smartd",
+                    "smbd",
+                    "sshd",
+                    "ufw",
+                ]
+                .contains(&sd_unit.name.as_str())
+                {
+                    match sd_unit.state {
+                        systemd::UnitState::Enabled | systemd::UnitState::EnabledRuntime => {
+                            println!(
+                                "     {} {}",
+                                Green.bold().paint(""),
+                                Green.bold().paint(sd_unit.name)
+                            )
+                        }
+                        systemd::UnitState::Masked
+                        | systemd::UnitState::MaskedRuntime
+                        | systemd::UnitState::Disabled
+                        | systemd::UnitState::Bad => println!(
+                            "     {} {}",
+                            Red.bold().paint(""),
+                            Red.bold().paint(sd_unit.name)
+                        ),
+                        _ => println!(
+                            "     {} {}",
+                            Yellow.bold().paint("卑"),
+                            Yellow.bold().paint(sd_unit.name)
+                        ),
                     }
-                    systemd::UnitState::Masked
-                    | systemd::UnitState::MaskedRuntime
-                    | systemd::UnitState::Disabled
-                    | systemd::UnitState::Bad => {
-                        println!("     {} {}", Red.bold().paint(""), Red.bold().paint(sd_unit.name))
-                    }
-                    _ => println!("     {} {}", Yellow.bold().paint("卑"), Yellow.bold().paint(sd_unit.name)),
                 }
             }
         }
-        
+
         match get_docker_processes() {
             Some(processes) => {
                 println!("\n - {}", Cyan.bold().paint("Docker Containers"));
                 for process in processes {
                     println!("     {}", process);
                 }
-            },
+            }
             None => {}
         }
-        
-
 
         println!("\n{}", fill(quote.quote, w as usize));
         // Print Author
@@ -205,4 +213,3 @@ fn main() {
         println!("Unable to get terminal size");
     }
 }
-
