@@ -1,2 +1,2 @@
-pub mod quotes;
-pub use self::quotes::get_quote;
+pub mod quote_list;
+pub use self::quote_list::get_quote;

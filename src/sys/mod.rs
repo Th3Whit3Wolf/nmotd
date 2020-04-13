@@ -61,7 +61,7 @@ pub fn mem_info() -> Result<MemInfo, Error> {
         let label = split_line.next();
         let value = split_line.next();
         if value.is_some() && label.is_some() {
-            let label = label.unwrap().split(':').nth(0).ok_or(Error::Unknown)?;
+            let label = label.unwrap().split(':').next().ok_or(Error::Unknown)?;
             let value = value.unwrap().parse::<u64>().ok().ok_or(Error::Unknown)?;
             meminfo_hashmap.insert(label, value);
         }
@@ -92,10 +92,9 @@ pub fn cpu_info() -> Result<CpuInfo, Error> {
     let find_logical_cores = s.split('\n').find(|line| line.starts_with("siblings"));
     let find_physical_cores = s.split('\n').find(|line| line.starts_with("cpu cores"));
     let mut find_cpu_mhz = s.split('\n').find(|line| line.starts_with("cpu MHz"));
-    match find_cpu_mhz {
-        None => find_cpu_mhz = s.split('\n').find(|line| line.starts_with("BogoMIPS")),
-        _ => {}
-    }
+    if find_cpu_mhz.is_none() {
+        find_cpu_mhz = s.split('\n').find(|line| line.starts_with("BogoMIPS"))
+    };
     Ok(CpuInfo {
         speed: find_cpu_mhz
             .and_then(|line| line.split(':').last())
@@ -115,7 +114,7 @@ pub fn cpu_info() -> Result<CpuInfo, Error> {
         name: cpu_parse(
             find_cpu_model_name
                 .and_then(|line| line.split(':').last())
-                .and_then(|line| line.split('@').nth(0))
+                .and_then(|line| line.split('@').next())
                 .unwrap()
                 .trim(),
         ),
@@ -142,8 +141,7 @@ fn cpu_parse(s: &str) -> String {
     let s = str::replace(&s, "FPU", "");
     let s = str::replace(&s, "Chip Revision", "");
     let s = str::replace(&s, "Technologies, Inc", "");
-    let s = str::replace(&s, "Core2", "Core 2");
-    s
+    str::replace(&s, "Core2", "Core 2")
 }
 
 pub fn loadavg() -> Result<LoadAvg, Error> {

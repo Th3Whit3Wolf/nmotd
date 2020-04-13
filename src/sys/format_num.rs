@@ -25,55 +25,31 @@ impl MemUnit {
     fn format(&self) -> String {
         let bytes: f64 = match &self {
             MemUnit::B(bytes) => *bytes,
-            MemUnit::KB(bytes) => bytes / 1000 as f64,
-            MemUnit::KiB(bytes) => bytes / 1024 as f64,
-            MemUnit::MB(bytes) => bytes / 1_000_000 as f64,
-            MemUnit::MiB(bytes) => bytes / 1_048_576 as f64,
-            MemUnit::GB(bytes) => bytes / 1_000_000_000 as f64,
-            MemUnit::GiB(bytes) => bytes / 1_073_741_824 as f64,
+            MemUnit::KB(bytes) => bytes / 1000_f64,
+            MemUnit::KiB(bytes) => bytes / 1024_f64,
+            MemUnit::MB(bytes) => bytes / 1_000_000_f64,
+            MemUnit::MiB(bytes) => bytes / 1_048_576_f64,
+            MemUnit::GB(bytes) => bytes / 1_000_000_000_f64,
+            MemUnit::GiB(bytes) => bytes / 1_073_741_824_f64,
         };
         let string = bytes.to_string();
         match bytes as u64 {
-            0..=9 => {
-                let out = "".to_string() + &string[..1];
-                return out;
-            }
-            10..=99 => {
-                let out = "".to_string() + &string[..2] + " ";
-                return out;
-            }
-            100..=999 => {
-                let out = "".to_string() + &string[..3];
-                return out;
-            }
-            1_000..=9_999 => {
-                let out = "".to_string() + &string[..1] + "," + &string[1..4];
-                return out;
-            }
-            10_000..=99_999 => {
-                let out = "".to_string() + &string[..2] + "," + &string[2..5];
-                return out;
-            }
-            100_000..=999_999 => {
-                let out = "".to_string() + &string[..3] + "," + &string[3..6];
-                return out;
-            }
+            0..=9 => "".to_string() + &string[..1],
+            10..=99 => "".to_string() + &string[..2] + " ",
+            100..=999 => "".to_string() + &string[..3],
+            1_000..=9_999 => "".to_string() + &string[..1] + "," + &string[1..4],
+            10_000..=99_999 => "".to_string() + &string[..2] + "," + &string[2..5],
+            100_000..=999_999 => "".to_string() + &string[..3] + "," + &string[3..6],
             1_000_000..=9_999_999 => {
-                let out = "".to_string() + &string[..1] + "," + &string[1..4] + "," + &string[4..7];
-                return out;
+                "".to_string() + &string[..1] + "," + &string[1..4] + "," + &string[4..7]
             }
             10_000_000..=99_999_999 => {
-                let out = "".to_string() + &string[..2] + "," + &string[2..5] + "," + &string[5..8];
-                return out;
+                "".to_string() + &string[..2] + "," + &string[2..5] + "," + &string[5..8]
             }
             100_000_000..=999_999_999 => {
-                let out = "".to_string() + &string[..3] + "," + &string[3..6] + "," + &string[6..9];
-                return out;
+                "".to_string() + &string[..3] + "," + &string[3..6] + "," + &string[6..9]
             }
-            _ => {
-                let out = string;
-                return out;
-            }
+            _ => string,
         }
     }
 }

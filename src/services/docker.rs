@@ -4,30 +4,27 @@ pub fn get_docker_processes() -> Option<Vec<String>> {
     let mut docker: Vec<String> = Vec::with_capacity(4);
     match Command::new("docker").arg("ps").arg("-a").output() {
         Ok(x) => {
-            for line in String::from_utf8(x.stdout).unwrap().lines().skip(1) {
+            if let Some(line) = String::from_utf8(x.stdout).unwrap().lines().nth(1) {
                 if line
                     .split_whitespace()
-                    .skip(1)
-                    .next()
+                    .nth(1)
                     .unwrap()
                     .to_string()
                     .contains('/')
                 {
                     docker.push(str::replace(
                         line.split_whitespace()
-                            .skip(1)
-                            .next()
+                            .nth(1)
                             .unwrap()
                             .split('/')
-                            .skip(1)
-                            .next()
+                            .nth(1)
                             .unwrap(),
                         ':',
                         " ",
                     ))
                 } else {
                     docker.push(str::replace(
-                        line.split_whitespace().skip(1).next().unwrap(),
+                        line.split_whitespace().nth(1).unwrap(),
                         ':',
                         " ",
                     ))

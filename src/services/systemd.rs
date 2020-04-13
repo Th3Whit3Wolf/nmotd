@@ -65,7 +65,7 @@ pub fn list_unit_files() -> Result<Vec<SystemdUnit>, Box<dyn std::error::Error>>
     // Let's print all the names to stdout.
     for (a, b) in names {
         systemd.push(SystemdUnit {
-            name: String::from(str::replace(
+            name: str::replace(
                 Path::new(&a)
                     .file_name()
                     .unwrap()
@@ -76,7 +76,7 @@ pub fn list_unit_files() -> Result<Vec<SystemdUnit>, Box<dyn std::error::Error>>
                     .unwrap_or(""),
                 '@',
                 "",
-            )),
+            ),
             state: UnitState::new(&b),
         })
     }

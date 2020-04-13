@@ -8,7 +8,6 @@ pub struct Quote {
     pub permalink: &'static str,
 }
 
-
 pub fn get_quotes() -> [Quote; 329] {
     // Define & List
     let quotes: [Quote; 329] = [

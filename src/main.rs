@@ -158,8 +158,8 @@ fn main() {
         }
         println!("\n - {}", Cyan.bold().paint("Systemd Services"));
         for sd_unit in list_unit_files().unwrap() {
-            if !sd_unit.name.is_empty() {
-                if vec![
+            if !sd_unit.name.is_empty()
+                && vec![
                     "fail2ban",
                     "plexmediaserver",
                     "samba",
@@ -169,41 +169,35 @@ fn main() {
                     "ufw",
                 ]
                 .contains(&sd_unit.name.as_str())
-                {
-                    match sd_unit.state {
-                        systemd::UnitState::Enabled | systemd::UnitState::EnabledRuntime => {
-                            println!(
-                                "     {} {}",
-                                Green.bold().paint(""),
-                                Green.bold().paint(sd_unit.name)
-                            )
-                        }
-                        systemd::UnitState::Masked
-                        | systemd::UnitState::MaskedRuntime
-                        | systemd::UnitState::Disabled
-                        | systemd::UnitState::Bad => println!(
-                            "     {} {}",
-                            Red.bold().paint(""),
-                            Red.bold().paint(sd_unit.name)
-                        ),
-                        _ => println!(
-                            "     {} {}",
-                            Yellow.bold().paint("卑"),
-                            Yellow.bold().paint(sd_unit.name)
-                        ),
-                    }
+            {
+                match sd_unit.state {
+                    systemd::UnitState::Enabled | systemd::UnitState::EnabledRuntime => println!(
+                        "     {} {}",
+                        Green.bold().paint(""),
+                        Green.bold().paint(sd_unit.name)
+                    ),
+                    systemd::UnitState::Masked
+                    | systemd::UnitState::MaskedRuntime
+                    | systemd::UnitState::Disabled
+                    | systemd::UnitState::Bad => println!(
+                        "     {} {}",
+                        Red.bold().paint(""),
+                        Red.bold().paint(sd_unit.name)
+                    ),
+                    _ => println!(
+                        "     {} {}",
+                        Yellow.bold().paint("卑"),
+                        Yellow.bold().paint(sd_unit.name)
+                    ),
                 }
             }
         }
 
-        match get_docker_processes() {
-            Some(processes) => {
-                println!("\n - {}", Cyan.bold().paint("Docker Containers"));
-                for process in processes {
-                    println!("     {}", process);
-                }
+        if let Some(processes) = get_docker_processes() {
+            println!("\n - {}", Cyan.bold().paint("Docker Containers"));
+            for process in processes {
+                println!("     {}", process);
             }
-            None => {}
         }
 
         println!("\n{}", fill(quote.quote, w as usize));

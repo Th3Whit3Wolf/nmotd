@@ -87,13 +87,13 @@ impl OsRelease {
     /// Attempt to parse the contents of `/etc/os-release`.
     pub fn new() -> io::Result<OsRelease> {
         let file = BufReader::new(open("/etc/os-release")?);
-        Ok(OsRelease::from_iter(file.lines().flat_map(|line| line)))
+        Ok(OsRelease::from_iter(file.lines().flatten()))
     }
 
     /// Attempt to parse any `/etc/os-release`-like file.
     pub fn new_from<P: AsRef<Path>>(path: P) -> io::Result<OsRelease> {
         let file = BufReader::new(open(&path)?);
-        Ok(OsRelease::from_iter(file.lines().flat_map(|line| line)))
+        Ok(OsRelease::from_iter(file.lines().flatten()))
     }
 }
 

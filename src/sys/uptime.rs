@@ -3,10 +3,7 @@ use std::{fmt::Write, mem, time::Duration};
 
 pub fn uptime() -> String {
     match get_uptime() {
-        Ok(uptime) => {
-            let uptime = format_duration(uptime);
-            uptime
-        }
+        Ok(uptime) => format_duration(uptime),
         Err(err) => {
             eprintln!("Uptime: {}", err);
             std::process::exit(1);
@@ -27,17 +24,17 @@ pub fn get_uptime() -> Result<Duration, String> {
 pub fn format_duration(duration: Duration) -> String {
     let sec = duration.as_secs();
 
-    let years = sec / 31557600; // 365.25d
-    let sec = sec % 31557600;
+    let years = sec / 31_557_600; // 365.25d
+    let sec = sec % 31_557_600;
 
-    let months = sec / 2630016;
-    let sec = sec % 2630016;
+    let months = sec / 2_630_016;
+    let sec = sec % 2_630_016;
 
-    let days = sec / 86400;
-    let sec = sec % 86400;
+    let days = sec / 86_400;
+    let sec = sec % 86_400;
 
-    let hours = sec / 3600;
-    let sec = sec % 3600;
+    let hours = sec / 3_600;
+    let sec = sec % 3_600;
 
     let minutes = sec / 60;
     let seconds = sec % 60;
