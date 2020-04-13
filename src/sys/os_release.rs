@@ -1,4 +1,4 @@
-//! Type for parsing the `/etc/os-release` file.
+// Type for parsing the `/etc/os-release` file.
 
 use std::{
     collections::BTreeMap,
@@ -137,52 +137,6 @@ fn open<P: AsRef<Path>>(path: P) -> io::Result<File> {
             format!("unable to open file at {:?}: {}", path.as_ref(), why),
         )
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    const EXAMPLE: &str = r#"NAME="Pop!_OS"
-VERSION="18.04 LTS"
-ID=ubuntu
-ID_LIKE=debian
-PRETTY_NAME="Pop!_OS 18.04 LTS"
-VERSION_ID="18.04"
-HOME_URL="https://system76.com/pop"
-SUPPORT_URL="http://support.system76.com"
-BUG_REPORT_URL="https://github.com/pop-os/pop/issues"
-PRIVACY_POLICY_URL="https://system76.com/privacy"
-VERSION_CODENAME=bionic
-EXTRA_KEY=thing
-ANOTHER_KEY="#;
-
-    #[test]
-    fn os_release() {
-        let os_release = OsRelease::from_iter(EXAMPLE.lines().map(|x| x.into()));
-
-        assert_eq!(
-            os_release,
-            OsRelease {
-                name: "Pop!_OS".into(),
-                version: "18.04 LTS".into(),
-                id: "ubuntu".into(),
-                id_like: "debian".into(),
-                pretty_name: "Pop!_OS 18.04 LTS".into(),
-                version_id: "18.04".into(),
-                home_url: "https://system76.com/pop".into(),
-                support_url: "http://support.system76.com".into(),
-                bug_report_url: "https://github.com/pop-os/pop/issues".into(),
-                privacy_policy_url: "https://system76.com/privacy".into(),
-                version_codename: "bionic".into(),
-                extra: {
-                    let mut map = BTreeMap::new();
-                    map.insert("EXTRA_KEY".to_owned(), "thing".to_owned());
-                    map
-                }
-            }
-        )
-    }
 }
 
 // Note Everything Above This is came from
