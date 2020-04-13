@@ -415,6 +415,34 @@ mod test {
             String::from("227,335GiB")
         );
     }
+    #[test]
+    fn test_terabytes() {
+        assert_eq!(
+            MemUnit::TB(100_000_000_000_000_000.0).to_string(),
+            String::from("100,000TB")
+        );
+    }
+    #[test]
+    fn test_tebibytes() {
+        assert_eq!(
+            MemUnit::TiB(256_384_512_768_896_128.0).to_string(),
+            String::from("233,180TiB")
+        );
+    }
+    #[test]
+    fn test_petabytes() {
+        assert_eq!(
+            MemUnit::PB(100_000_000_000_000_000_000.0).to_string(),
+            String::from("100,000PB")
+        );
+    }
+    #[test]
+    fn test_pebibytes() {
+        assert_eq!(
+            MemUnit::PiB(128_256_384_512_768_896_128.0).to_string(),
+            String::from("113,914PiB")
+        );
+    }
 
     #[test]
     fn test_processes() {
