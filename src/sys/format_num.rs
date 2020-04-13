@@ -55,7 +55,7 @@ impl MemUnit {
                 return out;
             }
             100_000..=999_999 => {
-                let out = "  ".to_string() + &string[..3] + "," + &string[3..6];
+                let out = "".to_string() + &string[..3] + "," + &string[3..6];
                 return out;
             }
             1_000_000..=9_999_999 => {
@@ -63,13 +63,11 @@ impl MemUnit {
                 return out;
             }
             10_000_000..=99_999_999 => {
-                let out =
-                    "  ".to_string() + &string[..2] + "," + &string[2..5] + "," + &string[5..8];
+                let out = "".to_string() + &string[..2] + "," + &string[2..5] + "," + &string[5..8];
                 return out;
             }
             100_000_000..=999_999_999 => {
-                let out =
-                    "  ".to_string() + &string[..3] + "," + &string[3..6] + "," + &string[6..9];
+                let out = "".to_string() + &string[..3] + "," + &string[3..6] + "," + &string[6..9];
                 return out;
             }
             _ => {
