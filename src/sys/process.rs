@@ -1,7 +1,5 @@
 use std::{ffi::c_void, mem};
 
-
-
 #[repr(C)]
 struct PassWd {
     pw_name: *const c_void,
@@ -17,22 +15,18 @@ pub struct ProcessByUser {
     pub root: usize,
     pub user: usize,
     pub all: usize,
-    pub docker: Vec<procfs::process::Process>,
 }
+
 pub fn process_by_user() -> ProcessByUser {
     let process_list = procfs::process::all_processes().expect("Error getting list of processes");
 
     let mut root: usize = 0;
     let mut user: usize = 0;
-    let mut docker = Vec::with_capacity(0);
     for process in &process_list {
         if process.owner == 0 {
             root += 1
         } else if process.owner == unsafe { geteuid() } {
             user += 1
-        }
-        if process.stat.comm.contains("gitea") {
-            docker.push(process.to_owned());
         }
     }
 
@@ -40,7 +34,6 @@ pub fn process_by_user() -> ProcessByUser {
         root,
         user,
         all: process_list.len(),
-        docker,
     }
 }
 extern "system" {
@@ -53,7 +46,6 @@ extern "system" {
     ) -> i32;
     fn geteuid() -> u32;
     fn strlen(cs: *const c_void) -> usize;
-//fn gethostname(name: *mut c_void, len: usize) -> i32;
 }
 
 #[inline(always)]
@@ -100,6 +92,5 @@ fn string_from_cstring(string: *const c_void) -> String {
 
 pub fn username() -> String {
     let pwent = getpwuid();
-
     pwent.0
 }
