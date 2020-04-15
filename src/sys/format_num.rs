@@ -11,7 +11,7 @@ pub enum MemUnit {
     TB(f64),
     TiB(f64),
     PB(f64),
-    PiB(f64)
+    PiB(f64),
 }
 
 impl MemUnit {
@@ -27,7 +27,7 @@ impl MemUnit {
             MemUnit::TB(_) => "TB",
             MemUnit::TiB(_) => "TiB",
             MemUnit::PB(_) => "PB",
-            MemUnit::PiB(_) => "PiB"
+            MemUnit::PiB(_) => "PiB",
         }
     }
     fn format(&self) -> String {
@@ -42,7 +42,7 @@ impl MemUnit {
             MemUnit::TB(bytes) => bytes / 1_000_000_000_000_f64,
             MemUnit::TiB(bytes) => bytes / 1_099_511_627_776_f64,
             MemUnit::PB(bytes) => bytes / 1_000_000_000_000_000_f64,
-            MemUnit::PiB(bytes) => bytes / 1_125_899_906_842_624_f64
+            MemUnit::PiB(bytes) => bytes / 1_125_899_906_842_624_f64,
         };
         let string = bytes.to_string();
         match bytes as u64 {
