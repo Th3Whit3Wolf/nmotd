@@ -11,7 +11,7 @@ mod test {
     #[test]
     fn test_list_unit_files() {
         let unit_files = list_unit_files().unwrap();
-        assert!(unit_files.len() > 0, true);
+        assert!(!unit_files.is_empty(), true);
         for unit in unit_files {
             println!(
                 "Systemd Unit \n\tName: {}\n\tStatus: {:?}",

@@ -61,8 +61,20 @@ pub fn mem_info() -> Result<MemInfo, Error> {
         let label = split_line.next();
         let value = split_line.next();
         if value.is_some() && label.is_some() {
-            let label = label.unwrap().split(':').next().ok_or(Error::Unknown)?;
-            let value = value.unwrap().parse::<u64>().ok().ok_or(Error::Unknown)?;
+            let label = match label {
+                Some(a) => a,
+                _ => unreachable!(),
+            }
+            .split(':')
+            .next()
+            .ok_or(Error::Unknown)?;
+            let value = match value {
+                Some(a) => a,
+                _ => unreachable!(),
+            }
+            .parse::<u64>()
+            .ok()
+            .ok_or(Error::Unknown)?;
             meminfo_hashmap.insert(label, value);
         }
     }
@@ -269,7 +281,7 @@ mod test {
     #[test]
     pub fn test_get_kernel() {
         let kernel = get_kernel().unwrap();
-        assert!(kernel.len() > 0);
+        assert!(!kernel.is_empty());
         println!("Kernel: {:?}", kernel);
     }
 
@@ -344,20 +356,18 @@ mod test {
     #[test]
     fn test_format_duration() {
         assert_eq!(
-            format_duration(Duration::new(864000000, 0)).len() == 65,
+            format_duration(Duration::new(864_000_000, 0)).len() == 65,
             true
         );
         assert_eq!(
-            format_duration(Duration::new(864000000, 0))
-                == String::from(
-                    "27 years, 4 months, 16 days, 11 hours, 45 minutes, and 36 seconds"
-                ),
+            format_duration(Duration::new(864_000_000, 0))
+                == "27 years, 4 months, 16 days, 11 hours, 45 minutes, and 36 seconds",
             true
         );
-        println!("{}", format_duration(Duration::new(864000000, 0)));
+        println!("{}", format_duration(Duration::new(864_000_000, 0)));
         println!(
             "len = {}",
-            format_duration(Duration::new(864000000, 0)).len()
+            format_duration(Duration::new(864_000_000, 0)).len()
         );
     }
 
@@ -411,7 +421,7 @@ mod test {
     #[test]
     fn test_gibibytes() {
         assert_eq!(
-            MemUnit::GiB(2_440_99_511_627_776.0).to_string(),
+            MemUnit::GiB(244_099_511_627_776.0).to_string(),
             String::from("227,335GiB")
         );
     }
@@ -478,6 +488,6 @@ mod test {
     #[test]
     fn test_get_all_disks() {
         let disk = get_all_disks();
-        assert!(disk.len() > 0)
+        assert!(!disk.is_empty())
     }
 }
