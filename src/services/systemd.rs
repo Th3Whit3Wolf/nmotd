@@ -1,5 +1,5 @@
 use dbus::blocking::Connection;
-use std::{path::Path, time::Duration};
+use std::{fmt, path::Path, time::Duration};
 
 pub struct SystemdUnit {
     pub name: String,
@@ -39,6 +39,25 @@ impl UnitState {
             "generated" => UnitState::Generated,
             "transient" => UnitState::Transient,
             _ => panic!("Unknown State: {}", x),
+        }
+    }
+}
+
+impl fmt::Display for UnitState {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match &self {
+            UnitState::Static => write!(f, "Static"),
+            UnitState::Disabled => write!(f, "Disabled"),
+            UnitState::Enabled => write!(f, "Enabled"),
+            UnitState::EnabledRuntime => write!(f, "Enabled-Runtime"),
+            UnitState::Indirect => write!(f, "Indirect"),
+            UnitState::Linked => write!(f, "Linked"),
+            UnitState::LinkedRuntime => write!(f, "Linked-Runtime"),
+            UnitState::Masked => write!(f, "Masked"),
+            UnitState::MaskedRuntime => write!(f, "Masked-Runtime"),
+            UnitState::Bad => write!(f, "Bad"),
+            UnitState::Generated => write!(f, "Generated"),
+            UnitState::Transient => write!(f, "Transient"),
         }
     }
 }
