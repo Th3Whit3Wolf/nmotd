@@ -1,35 +1,13 @@
 use std::process::Command;
 
-pub fn get_docker_processes() -> Option<Vec<String>> {
-    let mut docker: Vec<String> = Vec::with_capacity(4);
-    match Command::new("docker").arg("ps").arg("-a").output() {
+pub fn get_docker_processes() -> Option<Vec<(String, String)>> {
+    let mut docker: Vec<(String, String)> = Vec::with_capacity(4);
+    match Command::new("docker").arg("ps").arg("--format").arg("{{.Image}}:#: {{.Status}}").output() {
         Ok(x) => {
-            if let Some(line) = String::from_utf8(x.stdout).unwrap().lines().nth(1) {
-                if line
-                    .split_whitespace()
-                    .nth(1)
-                    .unwrap()
-                    .to_string()
-                    .contains('/')
-                {
-                    docker.push(str::replace(
-                        line.split_whitespace()
-                            .nth(1)
-                            .unwrap()
-                            .split('/')
-                            .nth(1)
-                            .unwrap(),
-                        ':',
-                        " ",
-                    ))
-                } else {
-                    docker.push(str::replace(
-                        line.split_whitespace().nth(1).unwrap(),
-                        ':',
-                        " ",
-                    ))
+            for line in String::from_utf8(x.stdout).unwrap().lines().skip(1) {
+                
+                docker.push((line.split(":#:").next().unwrap().to_string(),line.split(":#:").nth(1).unwrap().to_string()))
                 }
-            }
             Some(docker)
         }
         Err(_) => None,
