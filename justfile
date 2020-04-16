@@ -1,6 +1,6 @@
 build:
     #!/bin/bash
-    RUSTFLAGS='-C target-cpu=native -C link-arg=-s' cargo run --release   
+    RUSTFLAGS='-C target-cpu=native -C link-arg=-s' cargo build --release --features=ui
 
 coverage:
     #!/bin/bash
