@@ -1,2 +1,2 @@
-pub mod quote_list;
-pub use self::quote_list::get_quote;
+pub mod array;
+pub use self::array::get_quote;
