@@ -11,5 +11,5 @@ size:
     /bin/du -h target/release/nmotd
 
 time:
-    #!/usr/bin/ion
+    #!/usr/bin/bash
     hyperfine target/release/nmotd
