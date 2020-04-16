@@ -1,15 +1,18 @@
-use tui::backend::Backend;
-use tui::layout::{Constraint, Direction, Layout, Rect};
-use tui::style::{Color, Modifier, Style};
-use tui::widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle};
-use tui::widgets::{
-    Axis, BarChart, Block, Borders, Chart, Dataset, Gauge, List, Marker, Paragraph, Row, Sparkline,
-    Table, Tabs, Text,
+use tui::{
+    backend::Backend,
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    symbols,
+    widgets::canvas::{Canvas, Line, Map, MapResolution, Rectangle},
+    widgets::{
+        Axis, BarChart, Block, Borders, Chart, Dataset, Gauge, List, Paragraph, Row, Sparkline,
+        Table, Tabs, Text,
+    },
+    Frame,
 };
-use tui::Frame;
 
 use crate::quotes::get_quote;
-use crate::services::{list_unit_files, systemd::*, get_docker_processes};
+use crate::services::{systemd::*, get_docker_processes};
 use crate::sys::{get_all_disks, MemUnit};
 use crate::ui::App;
 
@@ -45,21 +48,6 @@ fn draw_first_tab<B>(f: &mut Frame<B>, app: &mut App, area: Rect)
 where
     B: Backend,
 {
-    let wanted_units = [
-        "fail2ban",
-        "plexmediaserver",
-        "samba",
-        "smartd",
-        "smbd",
-        "sshd",
-        "ufw",
-    ];
-    let mut important_units = Vec::with_capacity(wanted_units.len());
-    for sd_unit in list_unit_files().unwrap() {
-        if !sd_unit.name.is_empty() && wanted_units.contains(&sd_unit.name.as_str()) {
-            important_units.push(sd_unit);
-        }
-    }
     let docker = get_docker_processes();
     let chunks = Layout::default()
         .constraints(
@@ -72,7 +60,7 @@ where
         )
         .split(area);
     draw_gauges(f, app, chunks[0]);
-    draw_charts(f, app, chunks[1], important_units, docker);
+    draw_charts(f, app, chunks[1],  docker);
     draw_text(f, chunks[2]);
 }
 
@@ -82,10 +70,38 @@ where
 {
     let disks = get_all_disks();
     let mut c: usize = 0;
-    let chunks = Layout::default()
-        .constraints([Constraint::Length(2), Constraint::Length(2)].as_ref())
-        .margin(1)
-        .split(area);
+    let chunks = match get_all_disks().len() {
+        2 => {
+            Layout::default()
+            .constraints([Constraint::Length(2), Constraint::Length(2)].as_ref())
+            .margin(1)
+            .split(area)
+        },
+        3 => {
+            Layout::default()
+            .constraints([Constraint::Length(2), Constraint::Length(2), Constraint::Length(2)].as_ref())
+            .margin(1)
+            .split(area)
+        },
+        4 => {
+            Layout::default()
+            .constraints([Constraint::Length(2), Constraint::Length(2), Constraint::Length(2), Constraint::Length(2)].as_ref())
+            .margin(1)
+            .split(area)
+        },
+        5 => {
+            Layout::default()
+            .constraints([Constraint::Length(2), Constraint::Length(2), Constraint::Length(2), Constraint::Length(2), Constraint::Length(2)].as_ref())
+            .margin(1)
+            .split(area)
+        },
+        _ => {
+            Layout::default()
+            .constraints([Constraint::Length(2)].as_ref())
+            .margin(1)
+            .split(area)
+        }
+    };
     let block = Block::default().borders(Borders::ALL).title("Drives");
     f.render_widget(block, area);
     for disk in disks {
@@ -141,7 +157,7 @@ where
     }
 }
 
-fn draw_charts<B>(f: &mut Frame<B>, app: &mut App, area: Rect, units: Vec<SystemdUnit>, docker: Option<Vec<(String, String)>>)
+fn draw_charts<B>(f: &mut Frame<B>, app: &mut App, area: Rect, docker: Option<Vec<(String, String)>>)
 where
     B: Backend,
 {
@@ -172,7 +188,7 @@ where
             let success_style = Style::default().fg(Color::Green).modifier(Modifier::BOLD);
 
             // List Systemd units
-            let mut units = units.iter().map(|SystemdUnit { name, state }| {
+            let units = app.wanted_systemd_units.iter().map(|SystemdUnit { name, state }| {
                 Text::styled(
                     format!("{}: {}", name, state),
                     match state {
@@ -237,18 +253,23 @@ where
         // Proc Root / Proc User
         // Network Connections per address
         let barchart = BarChart::default()
-            .block(Block::default().borders(Borders::ALL).title("Bar chart"))
+            .block(Block::default().borders(Borders::ALL).title("Stats"))
             .data(&app.barchart)
-            .bar_width(3)
-            .bar_gap(2)
+            .bar_width(9)
+            .bar_gap(1)
+            .bar_set(if app.enhanced_graphics {
+                symbols::bar::NINE_LEVELS
+            } else {
+                symbols::bar::THREE_LEVELS
+            })
             .value_style(
                 Style::default()
                     .fg(Color::Black)
-                    .bg(Color::Green)
+                    .bg(Color::Magenta)
                     .modifier(Modifier::ITALIC),
             )
-            .label_style(Style::default().fg(Color::Yellow))
-            .style(Style::default().fg(Color::Green));
+            .label_style(Style::default().fg(Color::Blue))
+            .style(Style::default().fg(Color::Magenta));
         f.render_widget(barchart, chunks[1]);
     }
     if app.show_chart {
@@ -260,12 +281,16 @@ where
         let datasets = [
             Dataset::default()
                 .name("data2")
-                .marker(Marker::Dot)
+                .marker(symbols::Marker::Dot)
                 .style(Style::default().fg(Color::Cyan))
                 .data(&app.signals.sin1.points),
             Dataset::default()
                 .name("data3")
-                .marker(Marker::Braille)
+                .marker(if app.enhanced_graphics {
+                    symbols::Marker::Braille
+                } else {
+                    symbols::Marker::Dot
+                })
                 .style(Style::default().fg(Color::Yellow))
                 .data(&app.signals.sin2.points),
         ];

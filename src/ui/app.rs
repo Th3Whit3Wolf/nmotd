@@ -1,4 +1,11 @@
 use crate::util::{RandomSignal, SinSignal, StatefulList, TabsState};
+use crate::services::{list_unit_files, systemd::*, get_docker_processes};
+
+
+use crate::sys::{
+    cpu_info, get_all_disks, get_kernel, hostname, loadavg, mem_info, process_by_user, uptime,
+    MemUnit, OsRelease,
+};
 
 const TASKS: [&'static str; 24] = [
     "Item1", "Item2", "Item3", "Item4", "Item5", "Item6", "Item7", "Item8", "Item9", "Item10",
@@ -35,32 +42,6 @@ const LOGS: [(&'static str, &'static str); 26] = [
     ("Event26", "INFO"),
 ];
 
-const EVENTS: [(&'static str, u64); 24] = [
-    ("B1", 9),
-    ("B2", 12),
-    ("B3", 5),
-    ("B4", 8),
-    ("B5", 2),
-    ("B6", 4),
-    ("B7", 5),
-    ("B8", 9),
-    ("B9", 14),
-    ("B10", 15),
-    ("B11", 1),
-    ("B12", 0),
-    ("B13", 4),
-    ("B14", 6),
-    ("B15", 4),
-    ("B16", 6),
-    ("B17", 4),
-    ("B18", 7),
-    ("B19", 13),
-    ("B20", 8),
-    ("B21", 11),
-    ("B22", 9),
-    ("B23", 3),
-    ("B24", 5),
-];
 
 pub struct Signal<S: Iterator> {
     source: S,
@@ -108,29 +89,50 @@ pub struct App<'a> {
     pub should_quit: bool,
     pub tabs: TabsState<'a>,
     pub show_chart: bool,
-    pub progress: u16,
+    pub progress: f64,
     pub sparkline: Signal<RandomSignal>,
     pub tasks: StatefulList<&'a str>,
     pub logs: StatefulList<(&'a str, &'a str)>,
     pub signals: Signals,
     pub barchart: Vec<(&'a str, u64)>,
     pub servers: Vec<Server<'a>>,
+    pub enhanced_graphics: bool,
+    pub wanted_systemd_units: Vec<SystemdUnit>
 }
 
 impl<'a> App<'a> {
-    pub fn new(title: &'a str) -> App<'a> {
+    pub fn new(title: &'a str, enhanced_graphics: bool, wanted_systemd_units: Vec<&str>) -> App<'a> {
         let mut rand_signal = RandomSignal::new(0, 100);
         let sparkline_points = rand_signal.by_ref().take(300).collect();
         let mut sin_signal = SinSignal::new(0.2, 3.0, 18.0);
         let sin1_points = sin_signal.by_ref().take(100).collect();
         let mut sin_signal2 = SinSignal::new(0.1, 2.0, 10.0);
         let sin2_points = sin_signal2.by_ref().take(200).collect();
+        let mem = mem_info().unwrap();
+        let load = loadavg().unwrap();
+        let pbu = process_by_user();
+        let mut important_units = Vec::with_capacity(wanted_systemd_units.len());
+        let mut bars = Vec::with_capacity(10);
+        bars.push(("Load(1m)", (load.one * 100_f64).ceil() as u64));
+        bars.push(("Load(5m)", (load.five * 100_f64).ceil() as u64));
+        bars.push(("Load(15m)", (load.fifteen * 100_f64).ceil() as u64));
+        bars.push(("Memory", ((mem.total - mem.free - mem.cached - mem.buffers - mem.sreclaimable) as f64 / mem.total as f64 * 100_f64).ceil()as u64));
+        if mem.swap_total > 0 {
+            bars.push(("Swap", (mem.swap_free as f64 / mem.swap_total as f64 * 100_f64).ceil()as u64));
+        }
+        bars.push(("Root Proc", (pbu.root as f64 / pbu.all as f64 * 100_f64).ceil() as u64));
+        bars.push(("User Proc", (pbu.user as f64 / pbu.all as f64 * 100_f64).ceil() as u64));
+        for sd_unit in list_unit_files().unwrap() {
+            if !sd_unit.name.is_empty() && wanted_systemd_units.contains(&sd_unit.name.as_str()) {
+                important_units.push(sd_unit);
+            }
+        }
         App {
             title,
             should_quit: false,
             tabs: TabsState::new(vec!["Tab0", "Tab1"]),
             show_chart: true,
-            progress: 0,
+            progress: 0.0,
             sparkline: Signal {
                 source: rand_signal,
                 points: sparkline_points,
@@ -151,7 +153,7 @@ impl<'a> App<'a> {
                 },
                 window: [0.0, 20.0],
             },
-            barchart: EVENTS.to_vec(),
+            barchart: bars,
             servers: vec![
                 Server {
                     name: "NorthAmerica-1",
@@ -178,6 +180,8 @@ impl<'a> App<'a> {
                     status: "Up",
                 },
             ],
+            enhanced_graphics,
+            wanted_systemd_units: important_units
         }
     }
 
@@ -211,9 +215,9 @@ impl<'a> App<'a> {
 
     pub fn on_tick(&mut self) {
         // Update progress
-        self.progress += 5;
-        if self.progress > 100 {
-            self.progress = 0;
+        self.progress += 0.001;
+        if self.progress > 1.0 {
+            self.progress = 0.0;
         }
 
         self.sparkline.on_tick();
