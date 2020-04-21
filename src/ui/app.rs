@@ -1,6 +1,5 @@
+use crate::services::{get_docker_processes, list_unit_files, systemd::*};
 use crate::util::{RandomSignal, SinSignal, StatefulList, TabsState};
-use crate::services::{list_unit_files, systemd::*, get_docker_processes};
-
 
 use crate::sys::{
     cpu_info, get_all_disks, get_kernel, hostname, loadavg, mem_info, process_by_user, uptime,
@@ -41,7 +40,6 @@ const LOGS: [(&'static str, &'static str); 26] = [
     ("Event25", "INFO"),
     ("Event26", "INFO"),
 ];
-
 
 pub struct Signal<S: Iterator> {
     source: S,
@@ -97,11 +95,15 @@ pub struct App<'a> {
     pub barchart: Vec<(&'a str, u64)>,
     pub servers: Vec<Server<'a>>,
     pub enhanced_graphics: bool,
-    pub wanted_systemd_units: Vec<SystemdUnit>
+    pub wanted_systemd_units: Vec<SystemdUnit>,
 }
 
 impl<'a> App<'a> {
-    pub fn new(title: &'a str, enhanced_graphics: bool, wanted_systemd_units: Vec<&str>) -> App<'a> {
+    pub fn new(
+        title: &'a str,
+        enhanced_graphics: bool,
+        wanted_systemd_units: Vec<&str>,
+    ) -> App<'a> {
         let mut rand_signal = RandomSignal::new(0, 100);
         let sparkline_points = rand_signal.by_ref().take(300).collect();
         let mut sin_signal = SinSignal::new(0.2, 3.0, 18.0);
@@ -116,12 +118,27 @@ impl<'a> App<'a> {
         bars.push(("Load(1m)", (load.one * 100_f64).ceil() as u64));
         bars.push(("Load(5m)", (load.five * 100_f64).ceil() as u64));
         bars.push(("Load(15m)", (load.fifteen * 100_f64).ceil() as u64));
-        bars.push(("Memory", ((mem.total - mem.free - mem.cached - mem.buffers - mem.sreclaimable) as f64 / mem.total as f64 * 100_f64).ceil()as u64));
+        bars.push((
+            "Memory",
+            ((mem.total - mem.free - mem.cached - mem.buffers - mem.sreclaimable) as f64
+                / mem.total as f64
+                * 100_f64)
+                .ceil() as u64,
+        ));
         if mem.swap_total > 0 {
-            bars.push(("Swap", (mem.swap_free as f64 / mem.swap_total as f64 * 100_f64).ceil()as u64));
+            bars.push((
+                "Swap",
+                (mem.swap_free as f64 / mem.swap_total as f64 * 100_f64).ceil() as u64,
+            ));
         }
-        bars.push(("Root Proc", (pbu.root as f64 / pbu.all as f64 * 100_f64).ceil() as u64));
-        bars.push(("User Proc", (pbu.user as f64 / pbu.all as f64 * 100_f64).ceil() as u64));
+        bars.push((
+            "Root Proc",
+            (pbu.root as f64 / pbu.all as f64 * 100_f64).ceil() as u64,
+        ));
+        bars.push((
+            "User Proc",
+            (pbu.user as f64 / pbu.all as f64 * 100_f64).ceil() as u64,
+        ));
         for sd_unit in list_unit_files().unwrap() {
             if !sd_unit.name.is_empty() && wanted_systemd_units.contains(&sd_unit.name.as_str()) {
                 important_units.push(sd_unit);
@@ -181,7 +198,7 @@ impl<'a> App<'a> {
                 },
             ],
             enhanced_graphics,
-            wanted_systemd_units: important_units
+            wanted_systemd_units: important_units,
         }
     }
 
